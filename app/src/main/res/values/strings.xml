@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TeleRelay</string>
+    <string name="channel_service">Relay service</string>
+    <string name="channel_service_desc">Keeps TeleRelay connected to your Telegram bot</string>
+</resources>

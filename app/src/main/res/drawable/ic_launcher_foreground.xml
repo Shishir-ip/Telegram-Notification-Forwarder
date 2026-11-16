@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- relay arcs -->
+    <path
+        android:pathData="M10,38 a18,18 0 0 1 0,32"
+        android:strokeColor="#FF0A84FF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M18,45 a10,10 0 0 1 0,18"
+        android:strokeColor="#FF5AB1FF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round" />
+    <!-- paper plane -->
+    <group
+        android:translateX="26.5"
+        android:translateY="27.6"
+        android:scaleX="2.2"
+        android:scaleY="2.2">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M2.01,21L23,12L2,3L2.01,10L17,12L2.01,14Z" />
+    </group>
+</vector>
