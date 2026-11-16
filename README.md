@@ -10,11 +10,16 @@
 </p>
 
 <p align="center">
+  <a href="https://shishir-ip.github.io/Telegram-Notification-Forwarder/"><img src="https://img.shields.io/badge/🌐_Website-Landing_Page-0A84FF?style=flat-square" alt="Website" /></a>&nbsp;
   <img src="https://img.shields.io/github/v/release/Shishir-ip/Telegram-Notification-Forwarder?style=flat-square&color=0A84FF" alt="Release" />
   <img src="https://img.shields.io/badge/platform-Android-green?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
   <img src="https://img.shields.io/badge/Jetpack%20Compose- Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Compose" />
   <img src="https://img.shields.io/github/license/Shishir-ip/Telegram-Notification-Forwarder?style=flat-square" alt="License" />
+</p>
+
+<p align="center">
+  🌐 <b><a href="https://shishir-ip.github.io/Telegram-Notification-Forwarder/">Official website — shishir-ip.github.io/Telegram-Notification-Forwarder</a></b>
 </p>
 
 ---
