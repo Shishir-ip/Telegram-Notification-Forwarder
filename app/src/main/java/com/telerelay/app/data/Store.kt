@@ -31,7 +31,7 @@ data class NotificationRecord(
 data class AppEntry(
     val packageName: String,
     val label: String,
-    val icon: ImageBitmap?
+    val isSystem: Boolean
 )
 
 /** Single source of truth. Backed by SharedPreferences, observed by Compose. */

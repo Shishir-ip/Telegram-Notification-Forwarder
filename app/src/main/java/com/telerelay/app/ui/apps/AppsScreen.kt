@@ -2,7 +2,10 @@ package com.telerelay.app.ui.apps
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.telerelay.app.data.AppEntry
@@ -46,6 +51,13 @@ import com.telerelay.app.ui.theme.TeleType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+enum class AppCategory(val label: String) {
+    ALL("All"),
+    USER("User"),
+    SYSTEM("System"),
+    FORWARDING("Forwarded")
+}
+
 @Composable
 fun AppsScreen() {
     val C = LocalTele.current
@@ -53,6 +65,7 @@ fun AppsScreen() {
     val haptics = rememberHaptics()
     var search by remember { mutableStateOf("") }
     var apps by remember { mutableStateOf<List<AppEntry>?>(null) }
+    var category by remember { mutableStateOf(AppCategory.USER) }
     val selected = Store.selectedApps.value
 
     LaunchedEffect(Unit) {
@@ -71,31 +84,20 @@ fun AppsScreen() {
         TeleSearchField(search, { search = it }, "Search apps")
         Spacer(Modifier.height(12.dp))
 
+        // category chips
         Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                "Select all",
-                style = TeleType.subhead,
-                color = C.accent,
-                modifier = Modifier.pressable {
-                    apps?.let { Store.setSelected(it.map { e -> e.packageName }.toSet()) }
-                    haptics.confirm()
-                }
-            )
-            Spacer(Modifier.width(18.dp))
-            Text(
-                "Clear",
-                style = TeleType.subhead,
-                color = C.accent,
-                modifier = Modifier.pressable {
-                    Store.setSelected(emptySet())
-                    haptics.confirm()
-                }
-            )
-            Spacer(Modifier.weight(1f))
-            Text("${apps?.size ?: 0} apps installed", style = TeleType.caption, color = C.text3)
+            AppCategory.entries.forEach { c ->
+                CategoryChip(
+                    label = c.label,
+                    selected = c == category,
+                    onSelect = { category = c }
+                )
+            }
         }
         Spacer(Modifier.height(12.dp))
 
@@ -110,10 +112,42 @@ fun AppsScreen() {
                 }
             }
             else -> {
-                val filtered = list.filter {
-                    it.label.contains(search, ignoreCase = true) ||
-                        it.packageName.contains(search, ignoreCase = true)
+                val filtered = filterApps(list, category, selected, search)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Select all",
+                        style = TeleType.subhead,
+                        color = C.accent,
+                        modifier = Modifier.pressable {
+                            Store.setSelected(selected + filtered.map { it.packageName }.toSet())
+                            haptics.confirm()
+                        }
+                    )
+                    Spacer(Modifier.width(18.dp))
+                    Text(
+                        "Clear",
+                        style = TeleType.subhead,
+                        color = C.accent,
+                        modifier = Modifier.pressable {
+                            Store.setSelected(selected - filtered.map { it.packageName }.toSet())
+                            haptics.confirm()
+                        }
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        when (category) {
+                            AppCategory.FORWARDING -> "${filtered.size} forwarding"
+                            else -> "${filtered.size} apps"
+                        },
+                        style = TeleType.caption,
+                        color = C.text3
+                    )
                 }
+                Spacer(Modifier.height(12.dp))
+
                 Box(
                     Modifier
                         .weight(1f)
@@ -125,14 +159,15 @@ fun AppsScreen() {
                         Column(
                             Modifier.fillMaxSize().padding(bottom = 60.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text("No apps match", style = TeleType.callout, color = C.text2)
-                            Text(
-                                "Try a different search term",
-                                style = TeleType.footnote,
-                                color = C.text3
-                            )
+                            val (title, sub) = if (category == AppCategory.FORWARDING)
+                                "Nothing forwarded yet" to "Select apps to start relaying them"
+                            else
+                                "No apps match" to "Try a different search term"
+                            Text(title, style = TeleType.callout, color = C.text2)
+                            Spacer(Modifier.height(4.dp))
+                            Text(sub, style = TeleType.footnote, color = C.text3)
                         }
                     }
                     LazyColumn(Modifier.fillMaxSize()) {
@@ -180,19 +215,60 @@ fun AppsScreen() {
     }
 }
 
+private fun filterApps(
+    list: List<AppEntry>,
+    category: AppCategory,
+    selected: Set<String>,
+    search: String
+): List<AppEntry> {
+    val byCategory = when (category) {
+        AppCategory.ALL -> list
+        AppCategory.USER -> list.filter { !it.isSystem }
+        AppCategory.SYSTEM -> list.filter { it.isSystem }
+        AppCategory.FORWARDING -> list.filter { it.packageName in selected }
+    }
+    if (search.isBlank()) return byCategory
+    return byCategory.filter {
+        it.label.contains(search, ignoreCase = true) ||
+            it.packageName.contains(search, ignoreCase = true)
+    }
+}
+
+@Composable
+private fun CategoryChip(label: String, selected: Boolean, onSelect: () -> Unit) {
+    val C = LocalTele.current
+    val haptics = rememberHaptics()
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (selected) C.accentSoft else C.fill)
+            .pressable { haptics.tick(); onSelect() }
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(
+            label,
+            style = TeleType.subhead,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) C.accent else C.text2
+        )
+    }
+}
+
 private suspend fun loadApps(ctx: Context): List<AppEntry> = withContext(Dispatchers.IO) {
     val pm = ctx.packageManager
-    val main = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-    val out = LinkedHashMap<String, AppEntry>()
+    val out = ArrayList<AppEntry>()
     try {
-        pm.queryIntentActivities(main, 0).forEach { ri ->
-            val pkg = ri.activityInfo?.packageName ?: return@forEach
-            if (pkg == ctx.packageName || out.containsKey(pkg)) return@forEach
-            val label = try { ri.loadLabel(pm).toString() } catch (e: Exception) { pkg }
-            val icon = try { Store.drawableToImageBitmap(ri.loadIcon(pm)) } catch (e: Exception) { null }
+        val self = ctx.packageName
+        for (app in pm.getInstalledApplications(0)) {
+            val pkg = app.packageName
+            if (pkg == self) continue
+            val label = try {
+                pm.getApplicationLabel(app).toString()
+            } catch (e: Exception) { pkg }
+            val isSystem = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
             Store.appLabels[pkg] = label
-            out[pkg] = AppEntry(pkg, label, icon)
+            out.add(AppEntry(pkg, label, isSystem))
         }
     } catch (_: Exception) {}
-    out.values.sortedBy { it.label.lowercase() }
+    out.sortedBy { it.label.lowercase() }
 }

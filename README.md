@@ -27,6 +27,7 @@
 ## ✨ Features
 
 - 🔔 **Notification forwarding** — relay notifications from the exact apps you choose straight to your private Telegram bot chat
+- 🗂 **Every app, categorized** — filter the app list by All, User, System, or Forwarded, with search built in
 - 📱 **Multi-device ready** — every message starts with the device name, so you always know *which phone* sent it
 - 🤖 **Powerful bot commands** — check devices, list apps, search history, pause/resume, mute apps… all from Telegram
 - 🔐 **Owner-only bot** — the bot replies exclusively to the chat that sends `/start`; nobody else can use it
